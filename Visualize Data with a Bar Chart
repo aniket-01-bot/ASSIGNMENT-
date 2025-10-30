@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Visualize Data with a Bar Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9fb;
+        text-align: center;
+      }
+
+      svg {
+        background: white;
+        border: 1px solid #ccc;
+      }
+
+      #title {
+        font-size: 24px;
+        margin: 20px;
+        font-weight: bold;
+      }
+
+      .bar {
+        fill: steelblue;
+        transition: fill 0.2s;
+      }
+
+      .bar:hover {
+        fill: orange;
+      }
+
+      #tooltip {
+        position: absolute;
+        background: rgba(50, 50, 50, 0.9);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 5px;
+        pointer-events: none;
+        font-size: 12px;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">United States GDP (1947–2015)</h1>
+
+    <div id="chart"></div>
+    <div id="tooltip"></div>
+
+    <script>
+      const url =
+        "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json";
+
+      const width = 900;
+      const height = 500;
+      const padding = 60;
+
+      const tooltip = d3.select("#tooltip");
+
+      d3.json(url).then((data) => {
+        const dataset = data.data;
+
+        const years = dataset.map((d) => new Date(d[0]));
+        const gdp = dataset.map((d) => d[1]);
+
+        const xScale = d3
+          .scaleTime()
+          .domain([d3.min(years), d3.max(years)])
+          .range([padding, width - padding]);
+
+        const yScale = d3
+          .scaleLinear()
+          .domain([0, d3.max(gdp)])
+          .range([height - padding, padding]);
+
+        const svg = d3
+          .select("#chart")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        // Create axes
+        const xAxis = d3.axisBottom(xScale);
+        const yAxis = d3.axisLeft(yScale);
+
+        svg
+          .append("g")
+          .attr("id", "x-axis")
+          .attr("transform", `translate(0,${height - padding})`)
+          .call(xAxis);
+
+        svg
+          .append("g")
+          .attr("id", "y-axis")
+          .attr("transform", `translate(${padding},0)`)
+          .call(yAxis);
+
+        // Bar width
+        const barWidth = (width - 2 * padding) / dataset.length;
+
+        // Draw bars
+        svg
+          .selectAll(".bar")
+          .data(dataset)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", (d) => xScale(new Date(d[0])))
+          .attr("y", (d) => yScale(d[1]))
+          .attr("width", barWidth)
+          .attr("height", (d) => height - padding - yScale(d[1]))
+          .attr("data-date", (d) => d[0])
+          .attr("data-gdp", (d) => d[1])
+          .on("mouseover", function (event, d) {
+            tooltip
+              .style("visibility", "visible")
+              .attr("data-date", d[0])
+              .html(
+                `<strong>${d[0]}</strong><br>GDP: $${d[1]} Billion`
+              )
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY - 40 + "px");
+            d3.select(this).style("fill", "orange");
+          })
+          .on("mouseout", function () {
+            tooltip.style("visibility", "hidden");
+            d3.select(this).style("fill", "steelblue");
+          });
+      });
+    </script>
+
+    <!-- FCC Test Bundle -->
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+  </body>
+</html>
